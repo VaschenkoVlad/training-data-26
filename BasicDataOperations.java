@@ -1,27 +1,24 @@
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Duration;
 
-/** Координатор пошуку точного значення та значень у заданому інтервалі. */
+/** Координатор пошуку точного значення та значень, більших за задану межу. */
 public class BasicDataOperations {
-    static final String PATH_TO_DATA_FILE = "list/LocalDateTime.data";
-    static final String SORTED_FILE_PREFIX = "list/LocalDateTime.sorted";
+    static final String PATH_TO_DATA_FILE = "list/Duration.data";
+    static final String SORTED_FILE_PREFIX = "list/Duration.sorted";
 
     public static void main(String[] args) {
-        if (args.length != 3 && args.length != 4) {
-            System.err.println("Використання: java BasicDataOperations <значення> <нижня-межа> <верхня-межа> [файл-даних]");
-            System.err.println("Приклад: java BasicDataOperations 2026-06-21T09:46:21 2026-06-01T00:00:00 2026-08-31T23:59:59");
+        if (args.length != 2 && args.length != 3) {
+            System.err.println("Використання: java BasicDataOperations <значення> <межа> [файл-даних]");
+            System.err.println("Приклад: java BasicDataOperations PT0H1M36S PT2M");
             System.exit(1);
             return;
         }
-        LocalDateTime searched;
-        LocalDateTime lower;
-        LocalDateTime upper;
+        Duration searched;
+        Duration threshold;
         try {
-            searched = LocalDateTime.parse(args[0], DateTimeFormatter.ISO_DATE_TIME);
-            lower = LocalDateTime.parse(args[1], DateTimeFormatter.ISO_DATE_TIME);
-            upper = LocalDateTime.parse(args[2], DateTimeFormatter.ISO_DATE_TIME);
-            if (lower.isAfter(upper)) {
-                throw new IllegalArgumentException("Нижня межа перевищує верхню");
+            searched = Duration.parse(args[0]);
+            threshold = Duration.parse(args[1]);
+            if (threshold.isNegative()) {
+                throw new IllegalArgumentException("Межа не може бути від'ємною");
             }
         } catch (RuntimeException exception) {
             System.err.println("Некоректні аргументи: " + exception.getMessage());
@@ -29,13 +26,13 @@ public class BasicDataOperations {
             return;
         }
 
-        String file = args.length == 4 ? args[3] : PATH_TO_DATA_FILE;
+        String file = args.length == 3 ? args[2] : PATH_TO_DATA_FILE;
         try {
-            LocalDateTime[] values = DataFileHandler.loadArrayFromFile(file);
+            Duration[] values = DataFileHandler.loadArrayFromFile(file);
             System.out.println("Точне значення для пошуку: " + searched);
             System.out.println("Завантажено значень: " + values.length);
             System.out.println("LIST");
-            new BasicDataOperationsUsingList(searched, values).executeDataOperations(lower, upper);
+            new BasicDataOperationsUsingList(searched, values).executeDataOperations(threshold);
             System.out.println("SET");
             new BasicDataOperationsUsingSet(searched, values).executeDataAnalysis();
             System.out.println("QUEUE");
