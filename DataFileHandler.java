@@ -3,7 +3,9 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.format.DateTimeParseException;
 
 /**
  * Клас DataFileHandler управляє роботою з файлами даних Duration.
@@ -18,20 +20,29 @@ public class DataFileHandler {
     public static Duration[] loadArrayFromFile(String filePath) {
         Duration[] temporaryArray = new Duration[1000];
         int currentIndex = 0;
+        int lineNumber = 0;
 
-        try (BufferedReader fileReader = new BufferedReader(new FileReader(filePath))) {
+        // кодування UTF-8 задаємо явно, щоб читання не залежало від налаштувань системи
+        try (BufferedReader fileReader = new BufferedReader(new FileReader(filePath, StandardCharsets.UTF_8))) {
             String currentLine;
             while ((currentLine = fileReader.readLine()) != null) {
-                // Видаляємо можливі невидимі символи та BOM
-                currentLine = currentLine.trim().replaceAll("^\\uFEFF", "");
-                if (!currentLine.isEmpty()) {
-                    // Duration.parse читає формат ISO-8601, наприклад PT0H1M55S; окремий форматер не потрібен
-                    Duration parsedValue = Duration.parse(currentLine);
-                    temporaryArray[currentIndex++] = parsedValue;
+                lineNumber++;
+                // Видаляємо BOM на початку файлу та пробіли по краях рядка
+                currentLine = currentLine.replaceAll("^\\uFEFF", "").trim();
+                if (currentLine.isEmpty()) {
+                    continue;
                 }
+                Duration parsedValue;
+                try {
+                    // Duration.parse читає формат ISO-8601, наприклад PT0H1M55S; окремий форматер не потрібен
+                    parsedValue = Duration.parse(currentLine);
+                } catch (DateTimeParseException parseException) {
+                    throw new IOException("рядок " + lineNumber + " містить некоректну тривалість '" + currentLine + "'", parseException);
+                }
+                temporaryArray[currentIndex++] = parsedValue;
             }
         } catch (IOException ioException) {
-            throw new java.io.UncheckedIOException("Не вдалося прочитати " + filePath, ioException);
+            throw new java.io.UncheckedIOException("Не вдалося прочитати " + filePath + ": " + ioException.getMessage(), ioException);
         }
 
         Duration[] resultArray = new Duration[currentIndex];
@@ -47,13 +58,14 @@ public class DataFileHandler {
      * @param filePath Шлях до файлу для збереження.
      */
     public static void writeArrayToFile(Duration[] valueArray, String filePath) {
-        try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(filePath))) {
+        // FileWriter перезаписує файл при кожному запуску; кодування також UTF-8
+        try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(filePath, StandardCharsets.UTF_8))) {
             for (Duration valueElement : valueArray) {
                 fileWriter.write(valueElement.toString());
                 fileWriter.newLine();
             }
         } catch (IOException ioException) {
-            throw new java.io.UncheckedIOException("Не вдалося записати " + filePath, ioException);
+            throw new java.io.UncheckedIOException("Не вдалося записати " + filePath + ": " + ioException.getMessage(), ioException);
         }
     }
 }

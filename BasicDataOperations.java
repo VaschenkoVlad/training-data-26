@@ -22,6 +22,7 @@ public class BasicDataOperations {
             }
         } catch (RuntimeException exception) {
             System.err.println("Некоректні аргументи: " + exception.getMessage());
+            System.err.println("Тривалість задається у форматі ISO-8601, наприклад PT0H1M36S або PT2M");
             System.exit(1);
             return;
         }

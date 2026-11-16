@@ -2,6 +2,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Vector;
 
 /**
@@ -249,29 +250,14 @@ public class BasicDataOperationsUsingList {
                 if (value.compareTo(threshold) > 0) matches[count++] = value;
             }
         } else {
-            // Етап 1. Бінарним пошуком знаходимо перший елемент, строго більший за межу.
-            // Масив упорядкований, тому спочатку йдуть елементи, не більші за threshold, а після них решта.
-            // Шукаємо індекс, де закінчується перша частина, і з кожним кроком
-            // удвічі звужуємо проміжок [low; high), у якому цей індекс може бути.
-            int low = 0;
-            int high = values.length;
-            while (low < high) {
-                // середина проміжку; зсув >>> 1 ділить на 2 без переповнення int
-                int mid = (low + high) >>> 1;
+            // Масив упорядкований за зростанням, тому значення, більші за межу, лежать у його кінці.
+            // Ідемо від кінця до початку і зупиняємось на першому значенні, не більшому за межу:
+            // ліворуч від нього всі значення ще менші, тож перевіряти їх не потрібно.
+            for (int i = values.length - 1; i >= 0; i--) {
+                Duration value = values[i];
                 inspected++;
-                // values[mid] <= threshold: шуканий індекс лежить правіше mid, тож відкидаємо ліву половину разом із mid;
-                // інакше values[mid] вже підходить, тож лишаємо mid і відкидаємо праву половину
-                if (values[mid].compareTo(threshold) <= 0) low = mid + 1; else high = mid;
-            }
-            // Тепер low == high: це перший елемент > threshold (або values.length, якщо таких немає).
-            // Знадобилось близько log2(n) порівнянь замість перегляду всіх менших елементів.
-
-            // Етап 2. Від знайденої позиції всі наступні елементи теж більші за межу,
-            // бо масив упорядкований за зростанням. Верхньої межі в умові немає,
-            // тому просто забираємо хвіст масиву без додаткових порівнянь.
-            for (int i = low; i < values.length; i++) {
-                inspected++;
-                matches[count++] = values[i];
+                if (value.compareTo(threshold) <= 0) break;
+                matches[count++] = value;
             }
         }
         PerformanceTracker.displayOperationTime(timeStart, operationName);
@@ -302,31 +288,14 @@ public class BasicDataOperationsUsingList {
                 if (value.compareTo(threshold) > 0) matches[count++] = value;
             }
         } else {
-            // Етап 1. Бінарним пошуком знаходимо перший елемент, строго більший за межу.
-            // Список упорядкований, тому спочатку йдуть елементи, не більші за threshold, а після них решта.
-            // Шукаємо індекс, де закінчується перша частина, і з кожним кроком
-            // удвічі звужуємо проміжок [low; high), у якому цей індекс може бути.
-            // Доступ get(mid) швидкий (O(1)) для Vector, як і для ArrayList; для LinkedList він повільний.
-            int low = 0;
-            int high = values.size();
-            while (low < high) {
-                // середина проміжку; зсув >>> 1 ділить на 2 без переповнення int
-                int mid = (low + high) >>> 1;
+            // Список упорядкований за зростанням, тому значення, більші за межу, лежать у його кінці.
+            // Зворотний обхід ListIterator починаємо з позиції size() і рухаємось через previous().
+            // Зупиняємось на першому значенні, не більшому за межу: далі всі значення ще менші.
+            ListIterator<Duration> cursor = values.listIterator(values.size());
+            while (cursor.hasPrevious()) {
+                Duration value = cursor.previous();
                 inspected++;
-                // values.get(mid) <= threshold: шуканий індекс лежить правіше mid, тож відкидаємо ліву половину разом із mid;
-                // інакше values.get(mid) вже підходить, тож лишаємо mid і відкидаємо праву половину
-                if (values.get(mid).compareTo(threshold) <= 0) low = mid + 1; else high = mid;
-            }
-            // Тепер low == high: це перший елемент > threshold (або values.size(), якщо таких немає).
-            // Знадобилось близько log2(n) порівнянь замість перегляду всіх менших елементів.
-
-            // Етап 2. Від знайденої позиції всі наступні елементи теж більші за межу,
-            // бо список упорядкований за зростанням. Верхньої межі в умові немає,
-            // тому просто забираємо хвіст списку без додаткових порівнянь.
-            java.util.ListIterator<Duration> cursor0 = values.listIterator(low);
-            while (cursor0.hasNext()) {
-                Duration value = cursor0.next();
-                inspected++;
+                if (value.compareTo(threshold) <= 0) break;
                 matches[count++] = value;
             }
         }

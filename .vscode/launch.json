@@ -8,8 +8,9 @@
             "type": "java",
             "name": "BasicDataOperations",
             "request": "launch",
-            "mainClass": "${file}",
-            "args": "2026-06-21T09:46:21 2026-06-01T00:00:00 2026-08-31T23:59:59"
+            "mainClass": "BasicDataOperations",
+            "cwd": "${workspaceFolder}",
+            "args": ["PT0H1M36S", "PT2M"]
         }
     ]
 }
